@@ -17,6 +17,7 @@ import android.os.IBinder;
 import android.view.Gravity;
 import android.view.WindowManager;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class MonitorService extends Service {
     private WindowManager windowManager;
@@ -88,13 +89,22 @@ public class MonitorService extends Service {
                 image.close();
                 Bitmap croppedBitmap = Bitmap.createBitmap(bitmap, 0, 0, image.getWidth(), image.getHeight());
                 bitmap.recycle();
-                Engine engine = new Engine();
-                float[] results = engine.detectScreen(croppedBitmap);
+                
+                byte[] resultBytes = new Engine().detectScreen(croppedBitmap);
                 croppedBitmap.recycle();
-                if (results != null) overlayView.updateResults(results);
+                
+                if (resultBytes != null) {
+                    overlayView.updateResults(bytesToFloats(resultBytes));
+                }
             }
             if (isRunning) captureHandler.postDelayed(this, 16);
         }
+    }
+
+    private float[] bytesToFloats(byte[] bytes) {
+        float[] floats = new float[bytes.length / 4];
+        ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder()).asFloatBuffer().get(floats);
+        return floats;
     }
 
     @Override
