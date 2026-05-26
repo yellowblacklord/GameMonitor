@@ -1,4 +1,4 @@
-package com.example.yoloscreen;
+package com.monitor.game;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
