@@ -1,9 +1,2 @@
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-rootProject.name = 'GameMonitor'
+rootProject.name = "GameMonitor"
 include ':app'
