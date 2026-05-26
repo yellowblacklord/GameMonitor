@@ -1,13 +1,3 @@
-// 顶层构建文件，用于添加所有子项目通用的配置选项
 plugins {
     id 'com.android.application' version '8.2.2' apply false
-}
-
-// 明确指定插件查找仓库
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
 }
