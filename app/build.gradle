@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace 'com.example.gamemonitor'
+    namespace 'com.example.yoloscreen'
     compileSdkVersion 34
     
     defaultConfig {
