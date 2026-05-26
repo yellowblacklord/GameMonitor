@@ -19,3 +19,13 @@ dependencies {
     // 只保留这一个核心库，确保配置在一次解析中完成
     implementation 'androidx.appcompat:appcompat:1.6.1'
 }
+
+// 自动化打包重命名脚本
+android.applicationVariants.all { variant ->
+    variant.outputs.all {
+        if (outputFileName != null && outputFileName.endsWith('.apk')) {
+            // 在这里修改你梦寐以求的文件名！
+            outputFileName = "GameMonitor.apk"
+        }
+    }
+}
