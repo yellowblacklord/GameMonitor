@@ -1,7 +1,0 @@
-com.example.yoloscreen.app-pngs-0 /data/data/com.termux/files/home/GameMonitor/447-master/app/build/generated/res/pngs/debug
-com.example.yoloscreen.app-resValues-1 /data/data/com.termux/files/home/GameMonitor/447-master/app/build/generated/res/resValues/debug
-com.example.yoloscreen.app-packageDebugResources-2 /data/data/com.termux/files/home/GameMonitor/447-master/app/build/intermediates/incremental/debug/packageDebugResources/merged.dir
-com.example.yoloscreen.app-packageDebugResources-3 /data/data/com.termux/files/home/GameMonitor/447-master/app/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
-com.example.yoloscreen.app-merged_res-4 /data/data/com.termux/files/home/GameMonitor/447-master/app/build/intermediates/merged_res/debug
-com.example.yoloscreen.app-debug-5 /data/data/com.termux/files/home/GameMonitor/447-master/app/src/debug/res
-com.example.yoloscreen.app-main-6 /data/data/com.termux/files/home/GameMonitor/447-master/app/src/main/res
