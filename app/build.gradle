@@ -3,7 +3,9 @@ plugins {
 }
 
 android {
+    namespace 'com.example.gamemonitor'
     compileSdkVersion 34
+    
     defaultConfig {
         applicationId "com.example.gamemonitor"
         minSdkVersion 21
