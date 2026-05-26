@@ -15,8 +15,7 @@ android {
     }
 }
 
+// 确保 dependencies 块是唯一的
 dependencies {
-    // 使用 compileOnly 或者仅仅声明 implementation
-    // 确保没有其他地方重复定义这个库
     implementation 'androidx.appcompat:appcompat:1.6.1'
 }
