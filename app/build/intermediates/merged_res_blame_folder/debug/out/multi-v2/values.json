@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.yoloscreen.app-mergeDebugResources-18:/values/values.xml",
+            "outputFile": "com.monitor.game.app-mergeDebugResources-18:/values/values.xml",
             "map": [
                 {
                     "source": "/data/data/com.termux/files/home/.gradle/caches/transforms-3/929f9fa80841e5d7d97393a6896db7a1/transformed/jetified-startup-runtime-1.1.1/res/values/values.xml",

@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.yoloscreen.app-mergeDebugResources-18:/values-de/values-de.xml",
+            "outputFile": "com.monitor.game.app-mergeDebugResources-18:/values-de/values-de.xml",
             "map": [
                 {
                     "source": "/data/data/com.termux/files/home/.gradle/caches/transforms-3/761d68ccdd62ecb8703967694e2fec50/transformed/core-1.9.0/res/values-de/values-de.xml",

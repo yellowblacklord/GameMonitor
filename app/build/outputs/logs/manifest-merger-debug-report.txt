@@ -59,13 +59,11 @@ MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /data/data/
 		ADDED from [androidx.core:core:1.9.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/761d68ccdd62ecb8703967694e2fec50/transformed/core-1.9.0/AndroidManifest.xml:28:18-86
 	android:label
 		ADDED from /data/data/com.termux/files/home/GameMonitor/app/src/main/AndroidManifest.xml:7:9-36
-	android:icon
-		ADDED from /data/data/com.termux/files/home/GameMonitor/app/src/main/AndroidManifest.xml:6:9-43
 	android:allowBackup
 		ADDED from /data/data/com.termux/files/home/GameMonitor/app/src/main/AndroidManifest.xml:5:9-35
 	android:theme
 		ADDED from /data/data/com.termux/files/home/GameMonitor/app/src/main/AndroidManifest.xml:8:9-65
-activity#com.example.yoloscreen.MainActivity
+activity#com.monitor.game.MainActivity
 ADDED from /data/data/com.termux/files/home/GameMonitor/app/src/main/AndroidManifest.xml:10:9-16:20
 	android:exported
 		ADDED from /data/data/com.termux/files/home/GameMonitor/app/src/main/AndroidManifest.xml:11:19-42
