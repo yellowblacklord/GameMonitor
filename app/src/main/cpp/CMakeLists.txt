@@ -2,14 +2,15 @@ cmake_minimum_required(VERSION 3.10.2)
 project("gamemonitor")
 
 set(NCNN_SDK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ncnn_sdk)
-
-# 让路径只到 include 层，这样代码里写 "ncnn/net.h" 就能完美匹配了
 include_directories(${NCNN_SDK_DIR}/include)
 
 add_library(ncnn STATIC IMPORTED)
 set_target_properties(ncnn PROPERTIES IMPORTED_LOCATION ${NCNN_SDK_DIR}/libs/${ANDROID_ABI}/libncnn.a)
 
 find_package(OpenMP REQUIRED)
+
+# 让 NDK 自动去系统寻找标准 vulkan 库路径
+find_library(VULKAN_LIB vulkan)
 
 add_library(native-lib SHARED
             native-lib.cpp
@@ -21,4 +22,4 @@ target_link_libraries(native-lib
                       log
                       jnigraphics
                       android
-                      vulkan)
+                      ${VULKAN_LIB}) # 使用绝对路径链接，杜绝找不到的情况
