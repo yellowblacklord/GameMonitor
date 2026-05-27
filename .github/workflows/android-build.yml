@@ -20,17 +20,26 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Download REAL glslang libraries in CI
+    - name: Download and Extract Official Full NCNN Vulkan SDK
       run: |
-        TARGET_DIR="app/src/main/cpp/ncnn_sdk/libs/arm64-v8a"
-        mkdir -p $TARGET_DIR
-        # 使用 raw.githubusercontent.com 确保下载到的是真正的二进制静态库，绝非网页文本
-        curl -L -o $TARGET_DIR/libglslang.a https://raw.githubusercontent.com/nihui/ncnn-assets/master/android/arm64-v8a/libglslang.a
-        curl -L -o $TARGET_DIR/libSPIRV.a https://raw.githubusercontent.com/nihui/ncnn-assets/master/android/arm64-v8a/libSPIRV.a
-        curl -L -o $TARGET_DIR/libMachineIndependent.a https://raw.githubusercontent.com/nihui/ncnn-assets/master/android/arm64-v8a/libMachineIndependent.a
-        curl -L -o $TARGET_DIR/libGenericCodeGen.a https://raw.githubusercontent.com/nihui/ncnn-assets/master/android/arm64-v8a/libGenericCodeGen.a
-        # 顺便打印一下文件大小，只要不是几 KB 的网页文件就稳了
-        ls -lh $TARGET_DIR
+        # 创建一个临时的下载目录
+        mkdir -p ncnn_download
+        cd ncnn_download
+        
+        # 1. 直接下载腾讯 NCNN 官方最新满血稳定版的 Android Vulkan SDK 压缩包
+        curl -L -o ncnn-android-vulkan.zip https://github.com/Tencent/ncnn/releases/download/20240410/ncnn-20240410-android-vulkan.zip
+        
+        # 2. 原地解压它
+        unzip ncnn-android-vulkan.zip
+        
+        # 3. 强行把解压出来的满血静态库文件（包含所有 glslang 依赖组件）拷贝覆盖到项目中
+        TARGET_LIB_DIR="../app/src/main/cpp/ncnn_sdk/libs/arm64-v8a"
+        mkdir -p $TARGET_LIB_DIR
+        cp -f ncnn-20240410-android-vulkan/arm64-v8a/lib/*.a $TARGET_LIB_DIR/
+        
+        # 4. 验证一下，此时里面一定会整整齐齐躺着所有官方编译好的 .a 文件
+        cd ..
+        ls -lh app/src/main/cpp/ncnn_sdk/libs/arm64-v8a/
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
