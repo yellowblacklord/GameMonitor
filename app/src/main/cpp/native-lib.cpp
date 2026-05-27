@@ -34,12 +34,10 @@ Java_com_monitor_game_Engine_detectScreen(JNIEnv* env, jobject thiz, jobject bit
     AndroidBitmapInfo info;
     void* pixels = nullptr;
     
-    // 锁定 Android Bitmap 像素缓冲区（零拷贝高性能映射）
     if (AndroidBitmap_getInfo(env, bitmap, &info) < 0 || AndroidBitmap_lockPixels(env, bitmap, &pixels) < 0) {
         return nullptr;
     }
 
-    // 调用底层多线程协同推理引擎
     std::vector<ObjectBox> results = detector->detectFrame((unsigned char*)pixels, info.width, info.height);
     
     AndroidBitmap_unlockPixels(env, bitmap);
@@ -49,7 +47,7 @@ Java_com_monitor_game_Engine_detectScreen(JNIEnv* env, jobject thiz, jobject bit
     jfloatArray result_array = env->NewFloatArray(1 + num_objects * step);
     
     float* buffer = new float[1 + num_objects * step];
-    buffer[0] = (float)num_objects; // 第一个参数代表目标总数
+    buffer[0] = (float)num_objects;
     
     for (int i = 0; i < num_objects; i++) {
         buffer[1 + i * step + 0] = results[i].x1;
