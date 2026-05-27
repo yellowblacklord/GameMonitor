@@ -4,7 +4,7 @@ project("gamemonitor")
 set(NCNN_SDK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ncnn_sdk)
 include_directories(${NCNN_SDK_DIR}/include)
 
-# 注册 5 个彼此依赖的静态库（顺序极其重要）
+# 注册 5 个静态库
 add_library(ncnn STATIC IMPORTED)
 set_target_properties(ncnn PROPERTIES IMPORTED_LOCATION ${NCNN_SDK_DIR}/libs/${ANDROID_ABI}/libncnn.a)
 
@@ -27,12 +27,16 @@ add_library(native-lib SHARED
             native-lib.cpp
             ObjectDetector.cpp)
 
+# 调整后的金字塔链接顺序：被依赖越深的库，越往右边放。
+# 末尾追加 MachineIndependent 和 glslang 再次扫描，彻底解决 InitGlobalLock 找不到的问题
 target_link_libraries(native-lib
                       ncnn
-                      glslang
                       SPIRV
-                      MachineIndependent
                       GenericCodeGen
+                      MachineIndependent
+                      glslang
+                      MachineIndependent
+                      glslang
                       OpenMP::OpenMP_CXX
                       log
                       jnigraphics
