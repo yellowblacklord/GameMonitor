@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 全部升级到官方推荐的 v4 稳定版
     - uses: actions/checkout@v4
 
     - name: set up JDK 17
@@ -21,15 +20,17 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Download missing glslang libraries directly in CI
+    - name: Download REAL glslang libraries in CI
       run: |
         TARGET_DIR="app/src/main/cpp/ncnn_sdk/libs/arm64-v8a"
         mkdir -p $TARGET_DIR
-        curl -L -o $TARGET_DIR/libglslang.a https://github.com/nihui/ncnn-assets/raw/master/android/arm64-v8a/libglslang.a
-        curl -L -o $TARGET_DIR/libSPIRV.a https://github.com/nihui/ncnn-assets/raw/master/android/arm64-v8a/libSPIRV.a
-        curl -L -o $TARGET_DIR/libMachineIndependent.a https://github.com/nihui/ncnn-assets/raw/master/android/arm64-v8a/libMachineIndependent.a
-        curl -L -o $TARGET_DIR/libGenericCodeGen.a https://github.com/nihui/ncnn-assets/raw/master/android/arm64-v8a/libGenericCodeGen.a
-        ls -la $TARGET_DIR
+        # 使用 raw.githubusercontent.com 确保下载到的是真正的二进制静态库，绝非网页文本
+        curl -L -o $TARGET_DIR/libglslang.a https://raw.githubusercontent.com/nihui/ncnn-assets/master/android/arm64-v8a/libglslang.a
+        curl -L -o $TARGET_DIR/libSPIRV.a https://raw.githubusercontent.com/nihui/ncnn-assets/master/android/arm64-v8a/libSPIRV.a
+        curl -L -o $TARGET_DIR/libMachineIndependent.a https://raw.githubusercontent.com/nihui/ncnn-assets/master/android/arm64-v8a/libMachineIndependent.a
+        curl -L -o $TARGET_DIR/libGenericCodeGen.a https://raw.githubusercontent.com/nihui/ncnn-assets/master/android/arm64-v8a/libGenericCodeGen.a
+        # 顺便打印一下文件大小，只要不是几 KB 的网页文件就稳了
+        ls -lh $TARGET_DIR
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
@@ -37,7 +38,6 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew assembleDebug
 
-    # 使用最新的 v4 版本，彻底解决拒绝执行的报错
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
