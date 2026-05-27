@@ -5,7 +5,6 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
-import java.io.File;
 import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
@@ -31,30 +30,31 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * 核心业务：定位并加载 320 与 416 双尺度 YOLOv8 模型
+     * 核心业务：定位并自动从 assets 提取并加载双尺度模型
      */
     private void initNcnnModels() {
-        String modelDir = getFilesDir().getAbsolutePath() + "/models/";
-        
-        File dir = new File(modelDir);
-        if (!dir.exists()) {
-            dir.mkdirs();
+        Log.d(TAG, "正在通过内存解压引擎，调动底层驱动加载双模型协同引擎...");
+
+        // 【终极纠正】：去掉所有多余前缀，100% 匹配你图片中 assets 里的文件名
+        String p320 = Engine.getRealFilePath(this, "320.param");
+        String b320 = Engine.getRealFilePath(this, "320.bin");
+        String p416 = Engine.getRealFilePath(this, "416.param");
+        String b416 = Engine.getRealFilePath(this, "416.bin");
+
+        // 验证文件是否成功从包体内提取释放
+        if (p320.isEmpty() || b320.isEmpty() || p416.isEmpty() || b416.isEmpty()) {
+            Log.e(TAG, "❌ [解压失败] 无法从 assets 中提取模型，请检查 assets 目录下是否存在对应的模型文件。");
+            return;
         }
 
-        Log.d(TAG, "正在调动底层驱动加载双模型协同引擎...");
-        
-        boolean isLoaded = gameEngine.initDetector(
-                modelDir + "yolov8n-320.param",
-                modelDir + "yolov8n-320.bin",
-                modelDir + "yolov8n-416.param",
-                modelDir + "yolov8n-416.bin"
-        );
+        // 传给底层 C++
+        boolean isLoaded = Engine.initDetector(p320, b320, p416, b416);
 
         if (isLoaded) {
             Log.d(TAG, "🔥 [核心喜报] 双模型协同引擎初始化成功！开始灌入实时图像流...");
             startCaptureLoop();
         } else {
-            Log.e(TAG, "❌ [初始化失败] 请检查模型文件是否已完整放入路径: " + modelDir);
+            Log.e(TAG, "❌ [初始化失败] C++ 拒绝了加载请求，可能是模型文件损坏或架构不匹配。");
         }
     }
 
@@ -73,8 +73,8 @@ public class MainActivity extends AppCompatActivity {
                         Bitmap currentScreen = captureScreenViaSystem();
                         
                         if (currentScreen != null) {
-                            // 2. 将全彩 Bitmap 图像直接灌入底层 C++ 驱动，这里已完美修复为 float[] 接收！
-                            float[] results = gameEngine.detectScreen(currentScreen);
+                            // 2. 将全彩 Bitmap 图像直接灌入底层 C++ 驱动
+                            float[] results = Engine.detectScreen(currentScreen);
                             
                             // 3. 解析底层传回的坐标与识别数据
                             if (results != null && results.length > 0) {
@@ -102,12 +102,10 @@ public class MainActivity extends AppCompatActivity {
     private void parseAndAction(float[] results) {
         if (results == null || results.length == 0) return;
         
-        // 数组的第 0 位代表检测到的目标总数量
         int numObjects = (int) results[0];
         Log.d(TAG, "🎯 底层协同引擎透传回的数据：本次画面共锁定 " + numObjects + " 个目标");
         
         if (numObjects > 0) {
-            // 说明画面里有敌人/目标，这里可以执行你的自动化模拟点击等业务
             Log.d(TAG, "🔥 触发业务动作：发现锁定的游戏目标，执行模拟指令！");
         }
     }
@@ -124,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
                 return bitmap;
             }
         } catch (Exception e) {
-            Log.e(TAG, "高级系统截图捕获失败（可能缺少 root 权限或悬浮窗无障碍特权）");
+            Log.e(TAG, "高级系统截图捕获失败（可能缺少 root 权限）");
         }
         return null;
     }
