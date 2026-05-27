@@ -14,24 +14,45 @@ ObjectDetector::~ObjectDetector() {
 bool ObjectDetector::loadModel(const char* param320, const char* bin320, const char* param416, const char* bin416) {
     std::lock_guard<std::mutex> lock(lck);
     
-    // 强制开启多线程并行加速
+    // 统一配置多线程（CPU 模式下使用）
     net320.opt.num_threads = 4;
     net416.opt.num_threads = 4;
     
-    // 如果硬件和平台环境支持，开启 GPU Vulkan 加速
+    // 【第一轮尝试】：优先开启高端的 GPU Vulkan 加速
+    LOGD("=== 尝试第一轮初始化：启用 Vulkan GPU 加速 ===");
     net320.opt.use_vulkan_compute = true;
     net416.opt.use_vulkan_compute = true;
 
+    int r1 = net320.load_param(param320);
+    int r2 = net320.load_model(bin320);
+    int r3 = net416.load_param(param416);
+    int r4 = net416.load_model(bin416);
+
+    if (r1 == 0 && r2 == 0 && r3 == 0 && r4 == 0) {
+        is_initialized = true;
+        LOGD("🔥 [极速喜报] 双模型 Vulkan GPU 加速初始化成功！协同引擎已全面就绪。");
+        return true;
+    }
+
+    // 【第二轮尝试】：如果上面失败了，说明 Vulkan 冲突，强制关闭 GPU 降级为全 CPU 兼容模式
+    LOGD("⚠️ 第一轮 GPU 初始化失败(错误码:%d,%d,%d,%d)，正在启动安全气囊：降级为纯 CPU 模式重新加载...", r1, r2, r3, r4);
+    net320.clear();
+    net416.clear();
+
+    net320.opt.use_vulkan_compute = false;
+    net416.opt.use_vulkan_compute = false;
+
     if (net320.load_param(param320) != 0 || net320.load_model(bin320) != 0) {
-        LOGD("加载 320 模型组件失败！请检查路径。");
+        LOGD("❌ [终极失败] 纯 CPU 模式加载 320 模型依然失败，请检查模型文件本身是否损坏！");
         return false;
     }
     if (net416.load_param(param416) != 0 || net416.load_model(bin416) != 0) {
-        LOGD("加载 416 模型组件失败！请检查路径。");
+        LOGD("❌ [终极失败] 纯 CPU 模式加载 416 模型依然失败，请检查模型文件本身是否损坏！");
         return false;
     }
+
     is_initialized = true;
-    LOGD("双模型初始化成功，协同引擎已就绪。");
+    LOGD("🚀 [兼容成功] 双模型纯 CPU 多线程协同引擎初始化成功！已成功绕过 Vulkan 限制。");
     return true;
 }
 
@@ -66,7 +87,6 @@ std::vector<ObjectBox> ObjectDetector::detectFrame(const unsigned char* rgba_buf
     std::vector<ObjectBox> final_results;
     if (!is_initialized) return final_results;
 
-    // 1. 运行 320 基础模型（用于识别大范围实体：人机、敌人、友军）
     ncnn::Mat in320 = ncnn::Mat::from_pixels_resize(rgba_buf, ncnn::Mat::PIXEL_RGBA2RGB, width, height, 320, 320);
     const float norm_vals[3] = {1/255.f, 1/255.f, 1/255.f};
     in320.substract_mean_normalize(0, norm_vals);
@@ -75,22 +95,18 @@ std::vector<ObjectBox> ObjectDetector::detectFrame(const unsigned char* rgba_buf
     ex320.input("in0", in320);
     
     ncnn::Mat out320;
-    // 依据参数文件分析，模型最后一层输出节点名称固定为 "413"
     ex320.extract("413", out320); 
 
     std::vector<ObjectBox> proposals320;
     generateBboxes(out320, proposals320, 0.45f, 320);
 
-    // 对 320 模型的结果进行排序和非极大值抑制(NMS)
     std::sort(proposals320.begin(), proposals320.end(), [](const ObjectBox& a, const ObjectBox& b) { return a.score > b.score; });
     std::vector<int> picked320;
     nmsSortedBboxes(proposals320, picked320, 0.45f);
 
-    // 2. 双模型串联协同核心逻辑
     for (int idx : picked320) {
         ObjectBox box = proposals320[idx];
         
-        // 缩放回手机屏幕的真实绝对坐标
         float real_x1 = (box.x1 / 320.f) * width;
         float real_y1 = (box.y1 / 320.f) * height;
         float real_x2 = (box.x2 / 320.f) * width;
@@ -99,10 +115,9 @@ std::vector<ObjectBox> ObjectDetector::detectFrame(const unsigned char* rgba_buf
         box.x1 = real_x1; box.y1 = real_y1; box.x2 = real_x2; box.y2 = real_y2;
         final_results.push_back(box);
 
-        // 如果识别到了活着的"敌人(0)"或"人机(3)"，对其上部特定区域进行二次切片，送入416模型找头部
         if (box.label == 0 || box.label == 3) {
             int roi_w = real_x2 - real_x1;
-            int roi_h = (real_y2 - real_y1) * 0.45f; // 精确锁定身体上半部分及头部预估范围
+            int roi_h = (real_y2 - real_y1) * 0.45f;
             
             int rx = std::max(0, (int)real_x1);
             int ry = std::max(0, (int)real_y1);
@@ -111,23 +126,20 @@ std::vector<ObjectBox> ObjectDetector::detectFrame(const unsigned char* rgba_buf
 
             if (roi_w <= 0 || roi_h <= 0) continue;
 
-            // 基于基础 RGBA 内存步长直接截取 ROI 区域并交由 NCNN 缩放到 416x416
             ncnn::Mat in416 = ncnn::Mat::from_pixels_resize(rgba_buf + (ry * width + rx) * 4, ncnn::Mat::PIXEL_RGBA2RGB, roi_w, roi_h, 416, 416);
             in416.substract_mean_normalize(0, norm_vals);
 
             ncnn::Extractor ex416 = net416.create_extractor();
             ex416.input("in0", in416);
             ncnn::Mat out416;
-            ex416.extract("413", out416); // 416 模型的导出结构与 320 一致，节点同为 "413"
+            ex416.extract("413", out416);
 
             std::vector<ObjectBox> proposals416;
             generateBboxes(out416, proposals416, 0.50f, 416);
 
             for (auto& head_box : proposals416) {
-                // 如果在区域内检测到了"头部(1)"、"倒地(4)"或"靶场头(6)"
                 if (head_box.label == 1 || head_box.label == 4 || head_box.label == 6) {
                     ObjectBox real_target;
-                    // 将局部绝对坐标映射回全屏幕绝对坐标系统
                     real_target.x1 = rx + (head_box.x1 / 416.f) * roi_w;
                     real_target.y1 = ry + (head_box.y1 / 416.f) * roi_h;
                     real_target.x2 = rx + (head_box.x2 / 416.f) * roi_w;
@@ -143,7 +155,6 @@ std::vector<ObjectBox> ObjectDetector::detectFrame(const unsigned char* rgba_buf
 }
 
 void ObjectDetector::generateBboxes(const ncnn::Mat& out, std::vector<ObjectBox>& proposals, float score_threshold, int model_size) {
-    // 对应标准扁平化 YOLO 导出格式解析
     for (int i = 0; i < out.h; i++) {
         const float* values = out.row(i);
         float score = values[4]; 
