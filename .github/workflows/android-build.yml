@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Android CI
 
 on:
   push:
@@ -11,14 +11,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    
+    - uses: actions/checkout@v3
+
     - name: set up JDK 17
       uses: actions/setup-java@v3
       with:
         java-version: '17'
         distribution: 'temurin'
         cache: gradle
+
+    - name: Download missing glslang libraries directly in CI
+      run: |
+        TARGET_DIR="app/src/main/cpp/ncnn_sdk/libs/arm64-v8a"
+        mkdir -p $TARGET_DIR
+        curl -L -o $TARGET_DIR/libglslang.a https://github.com/nihui/ncnn-assets/raw/master/android/arm64-v8a/libglslang.a
+        curl -L -o $TARGET_DIR/libSPIRV.a https://github.com/nihui/ncnn-assets/raw/master/android/arm64-v8a/libSPIRV.a
+        curl -L -o $TARGET_DIR/libMachineIndependent.a https://github.com/nihui/ncnn-assets/raw/master/android/arm64-v8a/libMachineIndependent.a
+        curl -L -o $TARGET_DIR/libGenericCodeGen.a https://github.com/nihui/ncnn-assets/raw/master/android/arm64-v8a/libGenericCodeGen.a
+        ls -la $TARGET_DIR
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
@@ -27,8 +37,7 @@ jobs:
       run: ./gradlew assembleDebug
 
     - name: Upload APK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
-        name: GameMonitor-Package
-        # 使用通配符 *.apk，这样无论打包出来叫什么名字，Actions 都能成功抓取并上传！
-        path: app/build/outputs/apk/debug/*.apk
+        name: app-debug
+        path: app/build/outputs/apk/debug/app-debug.apk
