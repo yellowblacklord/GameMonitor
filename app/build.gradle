@@ -4,26 +4,22 @@ plugins {
 
 android {
     namespace 'com.monitor.game'
-    compileSdk 34
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.monitor.game"
-        minSdk 24= 24
-        targetSdk 34
+        // 强行指定为 24，确保完美支持 Vulkan GPU 加速，且绝对没有语法错误
+        minSdk 24
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
-        // 强行指定只编译 64 位底层库（匹配你的 arm64-v8a 架构）
-        ndk {
-            abiFilters "arm64-v8a"
-        }
-    }
-
-    // 关键：告诉构建系统，C++ 的配置文件在哪里
-    externalNativeBuild {
-        cmake {
-            path "src/main/cpp/CMakeLists.txt"
-            version "3.22.1"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                cppFlags "-fopenmp"
+                abiFilters "arm64-v8a"
+            }
         }
     }
 
@@ -33,19 +29,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-    
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-}
-
-// 自动改名脚本
-android.applicationVariants.all { variant ->
-    variant.outputs.all {
-        if (outputFileName != null && outputFileName.endsWith('.apk')) {
-            outputFileName = "GameMonitor.apk"
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
         }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -53,4 +45,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
