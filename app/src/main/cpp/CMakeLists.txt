@@ -1,10 +1,14 @@
 cmake_minimum_required(VERSION 3.10.2)
 project("gamemonitor")
 
+# 【核心解药】强制 NDK 的 Clang 编译器将 OpenMP 的运行时库静态链接到我们的 So 中
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-openmp")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-openmp")
+
 # 统一设置库文件的绝对父路径
 set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ncnn_sdk/ncnn-20240410-android-vulkan/${ANDROID_ABI}/lib")
 
-# 1. 完美引入头文件路径
+# 1. 引入头文件路径
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ncnn_sdk/ncnn-20240410-android-vulkan/${ANDROID_ABI}/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ncnn_sdk/ncnn-20240410-android-vulkan/${ANDROID_ABI}/include/ncnn)
 
@@ -24,7 +28,6 @@ set_target_properties(machine_lib PROPERTIES IMPORTED_LOCATION "${LIB_DIR}/libMa
 add_library(codegen_lib STATIC IMPORTED)
 set_target_properties(codegen_lib PROPERTIES IMPORTED_LOCATION "${LIB_DIR}/libGenericCodeGen.a")
 
-# 核心解药：引入被遗漏的操作系统平台底层锁依赖
 add_library(osdepend_lib STATIC IMPORTED)
 set_target_properties(osdepend_lib PROPERTIES IMPORTED_LOCATION "${LIB_DIR}/libOSDependent.a")
 
@@ -36,8 +39,7 @@ add_library(native-lib SHARED
             native-lib.cpp
             ObjectDetector.cpp)
 
-# 4. 完美闭环的黄金链接顺序：
-# ncnn -> glslang -> MachineIndependent -> OSDependent -> GenericCodeGen
+# 4. 完美闭环的链接顺序
 target_link_libraries(native-lib
                       ncnn_lib
                       spirv_lib
